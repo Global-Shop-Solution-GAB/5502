@@ -1,0 +1,999 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.frmImport..Create
+Gui.frmImport..Caption("Import")
+Gui.frmImport..Size(5100,2700)
+Gui.frmImport..MinX(0)
+Gui.frmImport..MinY(0)
+Gui.frmImport..Position(0,0)
+Gui.frmImport..BackColor(-2147483633)
+Gui.frmImport..MaxButton(False)
+Gui.frmImport..MinButton(False)
+Gui.frmImport..MousePointer(0)
+Gui.frmImport..Event(UnLoad,frmImport_UnLoad)
+Gui.frmImport.dtpfrom.Create(DatePicker)
+Gui.frmImport.dtpfrom.Size(1275,285)
+Gui.frmImport.dtpfrom.Position(1170,285)
+Gui.frmImport.chkWBR.Create(CheckBox)
+Gui.frmImport.chkWBR.Size(780,360)
+Gui.frmImport.chkWBR.Position(1635,885)
+Gui.frmImport.chkWBR.Caption("WBR")
+Gui.frmImport.chkWBR.Value(1)
+Gui.frmImport.chkFAB.Create(CheckBox)
+Gui.frmImport.chkFAB.Size(1005,360)
+Gui.frmImport.chkFAB.Position(2550,885)
+Gui.frmImport.chkFAB.Caption("FAB")
+Gui.frmImport.chkFAB.Value(1)
+Gui.frmImport.cmdOK.Create(Button)
+Gui.frmImport.cmdOK.Size(855,375)
+Gui.frmImport.cmdOK.Position(120,1605)
+Gui.frmImport.cmdOK.Caption("OK")
+Gui.frmImport.cmdOK.Event(Click,cmdOK_Click)
+Gui.frmImport.lbl1.Create(Label,"Company Code :",True,1395,255,0,120,975,True,0,"Arial",8,-2147483633,0)
+Gui.frmImport.lbl2.Create(Label,"Date From",True,1035,255,0,120,345,True,0,"Arial",8,-2147483633,0)
+Gui.frmImport.lbl3.Create(Label,"To",True,495,255,0,2580,345,True,0,"Arial",8,-2147483633,0)
+Gui.frmImport.dtpTo.Create(DatePicker)
+Gui.frmImport.dtpTo.Size(1275,285)
+Gui.frmImport.dtpTo.Position(2940,285)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sParam.Declare
+	V.Global.sLocalPath.Declare
+	V.Global.sCMPY1.Declare
+	V.Global.sCMPY2.Declare
+
+	'delete
+'	V.Global.sCMPY1.Set("TWB")
+'	V.Global.sCMPY2.Set("TST")
+	
+	V.Global.sCMPY1.Set("WBR")
+	V.Global.sCMPY2.Set("FAB")
+
+
+	
+''	V.Global.sCMPY1.Set("TST")
+''	V.Global.sCMPY2.Set("PLA")
+
+''	f.Intrinsic.Control.CallSub(Connect_FTP)
+''	f.Intrinsic.Control.end
+
+''	gui.frmImport..Show
+'	
+'	f.Intrinsic.Control.If(Variable.Ambient.IsInTaskScheduler,=,True)
+''	Import Employees
+'		f.Intrinsic.Control.CallSub(Connect_FTP)
+'	f.Intrinsic.Control.else
+''	Export Time & Attendance
+'		gui.frmImport..Show
+'	f.Intrinsic.Control.endif
+
+
+''--------------------------------------------------
+	f.Intrinsic.Control.If(Variable.Ambient.IsInTaskScheduler,=,True)
+		f.Intrinsic.Control.CallSub(Connect_FTP)
+	f.Intrinsic.Control.elseIf(v.Caller.Switches,=,"SFTP")
+	'Import Employees
+		f.Intrinsic.Control.CallSub(Connect_FTP)
+	f.Intrinsic.Control.else
+	'Export Time & Attendance
+		gui.frmImport..Show
+	f.Intrinsic.Control.endif
+	'------------------------------
+	
+'	
+	F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+
+Program.Sub.Main.End
+
+Program.Sub.Export_Employee.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sFolder.Declare
+	V.Local.sFilePath.Declare
+	V.Local.sDtype.Declare
+	v.Local.sFilter.Declare
+	v.Local.sblank.Declare
+	V.Local.sTempFilePath.Declare
+	
+
+	V.Local.sDtype.set("String*!*String*!*String*!*String*!*String*!*String*!*String*!*String*!*String*!*String*!*String*!*String*!*String*!*String")
+	
+
+	F.Intrinsic.String.Build("{0}\{1}",V.Global.sLocalPath,v.Args.Filename,V.Local.sTempFilePath)
+	Function.Data.DataTable.CreateFromCSV("DTEmp",V.Local.sTempFilePath,V.Local.sDtype, true) 
+	
+'	v.Local.sFilter.Set("Employee_Name <> '' and EmployeeNumber <> '' and (PayGroup = 'WERK-BRAU' or PayGroup = 'FABCO EAST AND WEST')")
+	v.Local.sFilter.Set("Employee_Name <> '' and EmployeeNumber <> '' and (PayGroup like 'WER%' or PayGroup like 'FAB%')")			
+
+
+	f.Data.DataView.Create("DTEmp","DVImport",22,v.Local.sFilter,"")
+	
+	f.Data.DataTable.SetValueFormat("DTEmp",-1,"Hire_Date","Hire_Date","MMDDYY")
+	f.Data.DataTable.SetValueFormat("DTEmp",-1,"Termination_Date","Termination_Date","MMDDYY")
+	f.Data.DataTable.AddExpressionColumn("DTEmp","Pay_Frequency_1","String","IIF(Pay_Frequency='Weekly','W',IIF(Pay_Frequency='Monthly','M',IIF(Pay_Frequency='Bi-Weekly','B',IIF(Pay_Frequency='Semi-Monthly','S',''))))")
+	f.Data.DataTable.AddExpressionColumn("DTEmp","Pay_Type_1","String","IIF(Pay_Type='Hourly','H',IIF(Pay_Type='Salary','S',''))")
+	
+	f.Data.DataTable.AddExpressionColumn("DTEmp","Termination_Date_1","String","IIF(Termination_Date='00/00/0000','000000',Termination_Date)")
+	
+	
+	f.Data.DataTable.SetValueFormat("DTemp",-1,"Works-in_State","Works-in_State","!@@")
+	f.Data.DataTable.SetValueFormat("DTemp",-1,"SUI_State","SUI_State","!@@")
+
+	f.Data.DataTable.AddExpressionColumn("DTEmp","Works-in_State_1","String","ISNULL([Works-in_State],'  ')")
+	f.Data.DataTable.AddExpressionColumn("DTEmp","SUI_State_1","String","ISNULL([SUI_State],'  ')")
+	
+'	f.Data.DataTable.SetValueFormat("DTemp",-1,"EmployeeNumber","EmployeeNumber","00000")
+'	f.Data.DataTable.AddExpressionColumn("DTEmp","EmployeeNumber_1","String","[EmployeeNumber]")
+	
+	f.Data.DataTable.AddColumn("DTemp","FldJoin","long","1")
+	f.Data.DataTable.AddColumn("DTemp","EMP_Validate1","string","")
+	f.Data.DataTable.AddColumn("DTemp","EMP_Validate2","string","")
+	f.Data.DataTable.AddColumn("DTemp","EmpFName","string","")
+	f.Data.DataTable.AddColumn("DTemp","EmployeeNumber_1","string","")
+	f.Data.DataTable.AddColumn("DTemp","pay_groupcode","string")
+
+	f.Intrinsic.Control.CallSub(EmpName_format)
+	
+	'dont move from here
+	f.Data.DataTable.SetValueFormat("DTemp",-1,"EmployeeNumber","EmployeeNumber","00000")
+	f.Data.DataTable.SetValueFormat("DTemp",-1,"Rate_1","Rate_1","0.00")
+	f.Intrinsic.Control.CallSub(Validate_employee)
+	
+	f.Intrinsic.Control.CallSub(Blankspace_Template)
+	
+	Function.Intrinsic.Debug.Stop
+	
+
+	v.Local.sblank.set("")
+	f.Intrinsic.String.LPad(v.Local.sblank,"@",30,v.Local.sblank)
+	f.Intrinsic.String.Build("!{0}",v.Local.sblank,v.Local.sblank)
+	f.Data.DataTable.SetValueFormat("DTemp",-1,"EmpFName","EmpFName",v.Local.sblank)
+	
+	f.Data.DataTable.SetValueFormat("DTemp",-1,"Initials","Initials","!@@@")
+	f.Data.DataTable.SetValueFormat("DTemp",-1,"BalancingGroup","BalancingGroup","!@@@@@@@@")
+	
+	v.Local.sblank.set("")
+	f.Intrinsic.String.LPad(v.Local.sblank,"@",40,v.Local.sblank)
+	f.Intrinsic.String.Build("!{0}",v.Local.sblank,v.Local.sblank)
+	f.Data.DataTable.SetValueFormat("DTemp",-1,"EmployeeNumber_1","EmployeeNumber_1",v.Local.sblank)
+	f.Data.DataTable.SetValueFormat("DTemp",-1,"Dept","Dept","!@@@@")
+	
+	v.Local.sblank.set("")
+	f.Intrinsic.String.LPad(v.Local.sblank,"@",16,v.Local.sblank)
+	f.Intrinsic.String.Build("{0}",v.Local.sblank,v.Local.sblank)
+	f.Data.DataTable.SetValueFormat("DTemp",-1,"Rate_1","Rate_1",v.Local.sblank)
+	
+
+	f.Intrinsic.Control.CallSub(Build_ExportData,"Filename",v.Args.Filename)
+	
+	
+	f.Data.DataView.Close("DTEmp","DVImport")
+	f.Data.DataTable.Close("DTEmp")
+	f.Data.DataTable.Close("DtExport")
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+'	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.String.Build("File Name : {0} {1}{2}",v.Args.Filename,V.Ambient.Newline,V.Local.sError,V.Local.sError)
+	f.Intrinsic.Control.CallSub(Error_Log,"ERRMSG",V.Local.sError)
+F.Intrinsic.Control.EndTry
+Program.Sub.Export_Employee.End
+
+Program.Sub.Import_TimeAttendGSS.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sSQL.Declare
+	V.Local.dDtFrom.Declare
+	V.Local.dDtTo.Declare
+	v.Local.sFilter.Declare
+	
+	
+	V.Local.dDtFrom.set(v.Screen.frmImport!dtpfrom.Value)
+	V.Local.dDtTo.set(v.Screen.frmImport!dtpto.Value)
+	
+	f.Intrinsic.Control.If(v.DataTable.DTImport.Exists,=,false)
+		f.Data.DataTable.Create("DTImport",true)
+		f.Data.DataTable.AddColumn("DTImport","employee","string")
+	f.Intrinsic.Control.EndIf
+	
+
+
+f.Intrinsic.String.Build("select Mstr.employee,CONVERT(charge_date,SQL_CHAR) charge_date,CONVERT(Date_IN, SQL_CHAR) Date_IN,CONVERT(time_IN, SQL_CHAR) time_IN,CONVERT(hours_HH, SQL_Integer) hours_HH,CONVERT(Hours_MM, SQL_Integer) Hours_MM,'' as dummyclmn from v_EMPLOYEE_MSTR MSTR join v_TIME_ATTENDANCE ATT on Mstr.employee = ATT.employee where charge_date  between '{0}' and '{1}' and  rec_type = 'T' and Pay_Group = 'A'  ",V.Local.dDtFrom.PervasiveDate,V.Local.dDtTo.PervasiveDate, V.Local.sSql)
+f.Data.DataTable.CreateFromSQL("DTIN","con",v.Local.ssql)
+f.Intrinsic.Control.If(v.DataTable.DTIN.RowCount,>,0)
+	Function.Data.DataTable.Merge("DTIN","DTImport",True,1)
+	',hours_HH as hh1,Hours_MM as 'hh2'
+	f.Intrinsic.String.Build("select Mstr.employee,CONVERT(charge_date,SQL_CHAR) charge_date,CONVERT(Date_out, SQL_CHAR) as Date_IN,CONVERT(time_out, SQL_CHAR) as time_IN,'' as dummyclmn from v_EMPLOYEE_MSTR MSTR join v_TIME_ATTENDANCE ATT on Mstr.employee = ATT.employee where charge_date  between '{0}' and '{1}' and  rec_type = 'T' and Pay_Group = 'A'",V.Local.dDtFrom.PervasiveDate,V.Local.dDtTo.PervasiveDate, V.Local.sSql)
+	f.Data.DataTable.CreateFromSQL("DTOut","con",v.Local.ssql)
+	Function.Data.DataTable.Merge("DTOut","DTImport",True,1)	
+	f.Data.DataTable.Close("DTOut")
+f.Intrinsic.Control.EndIf
+f.Data.DataTable.Close("DTIN")
+
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.Import_TimeAttendGSS.End
+
+Program.Sub.Validate_employee.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+V.Local.sRet.Declare
+v.Local.ifor.Declare
+v.Local.sSQL.Declare
+V.Local.sTargetCmpy.Declare
+
+
+'f.Intrinsic.Control.If(V.Global.sCMPY1,<>,"")
+	Function.Data.DataView.ToDataTableDistinct("DTEmp","DVImport","DTTemp","EmployeeNumber")
+	'f.Data.DataView.Create("DTTemp","DVSTemp",22,"EmployeeNumber like '001%'","")
+	f.Data.DataView.Create("DTTemp","DVSTemp",22,"","")
+	
+	Function.Data.DataView.ToString("DTTemp", "DVSTemp", "EmployeeNumber", "*!*", ",", V.Local.sRet)
+	
+	f.Intrinsic.String.Split(V.Local.sRet,",",V.Local.sRet)
+	F.Intrinsic.Control.For(v.Local.ifor,0,V.Local.sRet.UBound,1)
+		f.Intrinsic.String.Build("'{0}'",V.Local.sRet(v.Local.ifor),V.Local.sRet(v.Local.ifor))
+	f.Intrinsic.Control.Next(v.Local.ifor)
+	f.Intrinsic.String.Join(V.Local.sRet,",",V.Local.sRet)
+	
+	f.Intrinsic.String.Build("GLOBAL{0}.EMPLOYEE_MSTR",V.Global.sCMPY1,V.Local.sTargetCmpy)
+'	f.Intrinsic.String.Build("GLOBAL{0}.EMPLOYEE_MSTR","WER",V.Local.sTargetCmpy)
+	f.Intrinsic.String.Build("select Employee,'Y' from {0} where Employee IN ({1})",V.Local.sTargetCmpy,V.Local.sRet,v.Local.sSQL)
+	Function.Data.Dictionary.CreateFromSQL("DICImport","con",v.Local.sSQL)
+	
+	F.Data.Dictionary.SetDefaultReturn("DICImport","N")
+	F.Data.DataTable.FillFromDictionary("DTEmp","DICImport","EmployeeNumber","EMP_Validate1")
+	f.Data.Dictionary.Close("DICImport")
+	
+	
+'	f.Intrinsic.String.Build("GLOBAL{0}.PAYROLL_PAY",V.Global.sCMPY1,V.Local.sTargetCmpy)
+'	f.Intrinsic.String.Build("select rtrim(DESCR),pay_group from {0}",V.Local.sTargetCmpy,v.Local.sSQL)
+'	Function.Data.Dictionary.CreateFromSQL("DICImport","con",v.Local.sSQL)
+'	
+'	F.Data.Dictionary.SetDefaultReturn("DICImport","P1")
+'	F.Data.DataTable.FillFromDictionary("DTEmp","DICImport","PayGroup","pay_groupcode1")
+'	f.Data.Dictionary.Close("DICImport")
+'f.Intrinsic.Control.EndIf
+
+'**************** switch company
+
+f.Intrinsic.String.Build("GLOBAL{0}.EMPLOYEE_MSTR",V.Global.sCMPY2,V.Local.sTargetCmpy)                   
+'f.Intrinsic.String.Build("GLOBAL{0}.EMPLOYEE_MSTR","FAB",V.Local.sTargetCmpy)
+
+f.Intrinsic.String.Build("select Employee,'Y' from {0} where Employee IN ({1})",V.Local.sTargetCmpy,V.Local.sRet,v.Local.sSQL)
+Function.Data.Dictionary.CreateFromSQL("DICImport","con",v.Local.sSQL)
+
+F.Data.Dictionary.SetDefaultReturn("DICImport","N")
+F.Data.DataTable.FillFromDictionary("DTEmp","DICImport","EmployeeNumber","EMP_Validate2")
+f.Data.Dictionary.Close("DICImport")
+
+
+f.Data.DataTable.AddExpressionColumn("DTEmp","EMP_Validate","string","IIF([EMP_Validate1] = 'Y' or [EMP_Validate2] = 'Y','Y','N')")
+f.Data.DataTable.SetValue("DTEmp",-1,"pay_groupcode","A")
+
+f.Data.Dataview.Close("DTTemp","DVSTemp")
+f.Data.DataTable.Close("DTTemp")
+
+
+
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	f.Intrinsic.Control.CallSub(Error_Log,"ERRMSG",V.Local.sError)
+F.Intrinsic.Control.EndTry
+Program.Sub.Validate_employee.End
+
+Program.Sub.EmpName_format.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+v.Local.sSQL.Declare
+V.Local.sRet.Declare
+
+'f.Intrinsic.UI.Msgbox(v.DataTable.DTEmp.RowCount)
+
+Function.Data.DataView.ToDataTableDistinct("DTEmp","DVImport","DTTemp","EmployeeNumber*!*Employee_Name")
+'f.Intrinsic.UI.Msgbox(v.DataTable.DTTemp.RowCount)
+
+f.Data.DataView.Create("DTTemp","DVSTemp")
+Function.Data.DataView.ToString("DTTemp", "DVSTemp", "EmployeeNumber*!*Employee_Name", "*!*", "$!$", V.Local.sRet)
+
+f.Intrinsic.String.Replace(V.Local.sRet,",","*!*",V.Local.sRet)
+f.Intrinsic.String.Replace(V.Local.sRet,".","",V.Local.sRet)
+
+f.Data.DataTable.CreateFromString("DTName",v.Local.sRet,"EmpNO*!*LName*!*Fname","String*!*String*!*String","*!*","$!$",True)
+f.Data.DataTable.AddExpressionColumn("DTName","EmpFName","string","trim(Fname) + ' ' + trim(LName)")
+
+Function.Data.Dictionary.CreateFromDataTable("DICImport","DTName","EmpNO","EmpFName")
+F.Data.Dictionary.SetDefaultReturn("DICImport","")
+F.Data.DataTable.FillFromDictionary("DTEmp","DICImport","EmployeeNumber","EmpFName")
+f.Data.Dictionary.Close("DICImport")
+
+f.Data.Dataview.Close("DTTemp","DVSTemp")
+f.Data.DataTable.Close("DTName")
+
+
+Function.Data.Dictionary.CreateFromDataTable("DICImport","DTEmp","EmployeeNumber","EmployeeNumber")
+F.Data.Dictionary.SetDefaultReturn("DICImport","")
+F.Data.DataTable.FillFromDictionary("DTEmp","DICImport","EmployeeNumber","EmployeeNumber_1")
+f.Data.Dictionary.Close("DICImport")
+
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+'	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.CallSub(Error_Log,"ERRMSG",V.Local.sError)
+'	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.EmpName_format.End
+
+Program.Sub.Blankspace_Template.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	v.Local.sblank.Declare
+
+	f.Intrinsic.Control.If(v.DataTable.DTBlank.Exists,=,false)
+		f.Data.DataTable.Create("DTBlank",True)
+		f.Data.DataTable.AddColumn("DTBlank","FldJoin","long","1")
+		f.Data.DataTable.AddColumn("DTBlank","Fld1","string"," ")
+		f.Data.DataTable.AddColumn("DTBlank","Fld2","string"," ")
+		f.Data.DataTable.AddColumn("DTBlank","Fld3","string"," ")
+		f.Data.DataTable.AddColumn("DTBlank","Fld4","string"," ")
+		f.Data.DataTable.AddColumn("DTBlank","Fld5","string"," ")
+		f.Data.DataTable.AddColumn("DTBlank","Fld6","string"," ")
+		f.Data.DataTable.AddColumn("DTBlank","Fld7","string"," ")
+		f.Data.DataTable.AddColumn("DTBlank","Fld8","string"," ")
+		
+		f.Data.DataTable.AddRow("DTBlank","Fld1"," ")
+		
+		f.Intrinsic.Control.CallSub(Format_BlankDT,"FldN","Fld1","FVal",75)
+		f.Data.DataTable.SetValueFormat("DTBlank",-1,"Fld1","Fld1",v.Args.RETVAL)
+		f.Intrinsic.Control.CallSub(Format_BlankDT,"FldN","Fld2","FVal",50)
+		f.Data.DataTable.SetValueFormat("DTBlank",-1,"Fld1","Fld2",v.Args.RETVAL)
+		f.Intrinsic.Control.CallSub(Format_BlankDT,"FldN","Fld3","FVal",50)
+		f.Data.DataTable.SetValueFormat("DTBlank",-1,"Fld1","Fld3",v.Args.RETVAL)
+		f.Intrinsic.Control.CallSub(Format_BlankDT,"FldN","Fld4","FVal",4)
+		f.Data.DataTable.SetValueFormat("DTBlank",-1,"Fld1","Fld4",v.Args.RETVAL)
+		f.Intrinsic.Control.CallSub(Format_BlankDT,"FldN","Fld5","FVal",16)
+		f.Data.DataTable.SetValueFormat("DTBlank",-1,"Fld1","Fld5",v.Args.RETVAL)
+		
+		'1086 = 1013 + 73
+		f.Intrinsic.Control.CallSub(Format_BlankDT,"FldN","Fld6","FVal",975)
+		f.Data.DataTable.SetValueFormat("DTBlank",-1,"Fld1","Fld6",v.Args.RETVAL)
+		
+		f.Intrinsic.Control.CallSub(Format_BlankDT,"FldN","Fld7","FVal",103)
+		f.Data.DataTable.SetValueFormat("DTBlank",-1,"Fld1","Fld7",v.Args.RETVAL)
+		
+		f.Intrinsic.Control.CallSub(Format_BlankDT,"FldN","Fld8","FVal",7)
+		f.Data.DataTable.SetValueFormat("DTBlank",-1,"Fld1","Fld8",v.Args.RETVAL)
+	f.Intrinsic.Control.endif
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+'	F.Intrinsic.UI.Msgbox(V.Local.sError)
+'	F.Intrinsic.Control.End
+	f.Intrinsic.Control.CallSub(Error_Log,"ERRMSG",V.Local.sError)
+F.Intrinsic.Control.EndTry	
+Program.Sub.Blankspace_Template.End
+
+Program.Sub.Format_BlankDT.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	v.Local.sblank.Declare
+	'blankspaces 
+	f.Intrinsic.String.LPad(v.Local.sblank,"@",v.Args.FVal,v.Local.sblank)
+	f.Intrinsic.String.Build("!{0}",v.Local.sblank,v.Local.sblank)
+	f.Intrinsic.Variable.AddRV("RETVAL",v.Local.sblank)
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+'	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry	
+Program.Sub.Format_BlankDT.End
+
+Program.Sub.Build_ExportData.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sFlds.Declare
+	V.Local.sRet.Declare
+	v.Local.sFilter.Declare
+	V.Local.sFiledir.Declare
+	V.Local.sParam.Declare
+	V.Local.sSummary.Declare
+	V.Local.sdate.Declare
+	V.Local.sFileName.Declare
+	v.Local.sFile.Declare
+	
+'	WERK-BRAU         =  WER
+'	FABCO EAST AND WEST = FAB
+'	
+
+
+	f.Intrinsic.Control.If(V.Global.sCMPY1,<>,"")
+		V.Local.sFlds.Set("D.EmployeeNumber_1*!*D.EmpFName*!*E.Fld1*!*D.Hire_Date*!*D.Termination_Date_1*!*E.Fld2*!*D.Initials*!*D.EmployeeNumber*!*E.Fld3*!*D.Dept*!*E.Fld4*!*D.Shift*!*D.Rate_1*!*E.Fld5*!*D.Pay_Frequency_1*!*D.Pay_Type_1*!*D.Works-in_State_1*!*D.SUI_State_1*!*E.Fld6*!*D.BalancingGroup*!*E.Fld7*!*D.pay_groupcode*!*E.Fld8*!*D.PayGroup*!*D.EMP_Validate")
+		F.Data.Linq.Join("leftjoin","dataview","DTEmp","DVImport*!*D","datatable","DTBlank*!*E","E.FldJoin =D.FldJoin",V.Local.sFlds,"","","","DtExport",True)
+		
+		
+		V.Local.sFlds.Set("EmployeeNumber*!*EmpFName*!*Fld1*!*Hire_Date*!*Termination_Date_1*!*Fld2*!*Initials*!*EmployeeNumber_1*!*Fld3*!*Dept*!*Fld4*!*Shift*!*Rate_1*!*Fld5*!*Pay_Frequency_1*!*Pay_Type_1*!*Works-in_State_1*!*SUI_State_1*!*Fld6*!*BalancingGroup*!*Fld7*!*pay_groupcode*!*Fld8")
+	'	f.Data.DataView.Create("DtExport","DVSTemp",22,"","")
+	
+		
+		f.Data.DataView.Create("DtExport","DVSTemp",22,"","")
+		
+		'New Employees
+		v.Local.sFilter.Set("PayGroup like 'WER%' and EMP_Validate = 'N'")
+		f.Data.DataView.SetFilter("DtExport","DVSTemp",v.Local.sFilter)
+		f.Intrinsic.Control.If(v.DataView.DtExport!DVSTemp.RowCount,>,0)
+		
+			f.Intrinsic.String.Build("WERK-BRAU - Added  :{0}{1}",v.DataView.DtExport!DVSTemp.RowCount,v.Ambient.NewLine,V.Local.sSummary)
+		
+			Function.Data.DataView.ToString("DtExport", "DVSTemp",V.Local.sFlds,"",v.Ambient.NewLine, V.Local.sRet)
+		
+			f.Global.General.overridecompany(V.Global.sCMPY1)
+	'		f.Global.General.overridecompany("WER")
+			F.Intrinsic.String.Concat(V.Caller.FilesDir,"\","EMPLOYEE.TXT",V.Local.sFiledir)
+			F.Intrinsic.File.String2File(V.Local.sFiledir,V.Local.sRet)
+			F.Intrinsic.String.Concat("NS","!*!","50",V.Local.sParam)
+		'	F.Intrinsic.Debug.CallWrapperDebugEnable
+			F.Global.General.CallWrapperSync(6006,V.Local.sParam)
+		f.Intrinsic.Control.endif
+		
+		'Existing Employees
+		v.Local.sFilter.Set("PayGroup like 'WER%' and EMP_Validate = 'Y'")
+		f.Data.DataView.SetFilter("DtExport","DVSTemp",v.Local.sFilter)
+		f.Intrinsic.Control.If(v.DataView.DtExport!DVSTemp.RowCount,>,0)
+			f.Intrinsic.String.Build("{0}WERK-BRAU - Updated  :{1}{2}",V.Local.sSummary,v.DataView.DtExport!DVSTemp.RowCount,v.Ambient.NewLine,V.Local.sSummary)
+			'savedb
+			f.Intrinsic.Control.CallSub(UpdateEmployees,"Tcmpy",V.Global.sCMPY1)
+		f.Intrinsic.Control.endif
+	f.Intrinsic.Control.endif
+	v.Local.sFilter.Set("PayGroup like 'FAB%' and EMP_Validate = 'N'")
+	f.Data.DataView.SetFilter("DtExport","DVSTemp",v.Local.sFilter)
+	f.Intrinsic.Control.If(v.DataView.DtExport!DVSTemp.RowCount,>,0)
+		f.Intrinsic.String.Build("{0}FABCO EAST AND WEST - Added  :{1}{2}",V.Local.sSummary,v.DataView.DtExport!DVSTemp.RowCount,v.Ambient.NewLine,V.Local.sSummary)
+		Function.Data.DataView.ToString("DtExport", "DVSTemp",V.Local.sFlds,"",v.Ambient.NewLine, V.Local.sRet)
+		F.Intrinsic.String.Concat(V.Caller.FilesDir,"\","EMPLOYEE.TXT",V.Local.sFiledir)
+		F.Intrinsic.File.String2File(V.Local.sFiledir,V.Local.sRet)
+		f.Global.General.overridecompany(V.Global.sCMPY2)
+'		f.Global.General.overridecompany("FAB")
+		F.Intrinsic.String.Concat("NS","!*!","50",V.Local.sParam)
+		F.Global.General.CallWrapperSync(6006,V.Local.sParam)
+	f.Intrinsic.Control.endif
+	
+	'Existing Employees
+	v.Local.sFilter.Set("PayGroup like 'FAB%' and EMP_Validate = 'Y'")
+	f.Data.DataView.SetFilter("DtExport","DVSTemp",v.Local.sFilter)
+	f.Intrinsic.Control.If(v.DataView.DtExport!DVSTemp.RowCount,>,0)
+		f.Intrinsic.String.Build("{0}FABCO EAST AND WEST - Updated  :{1}{2}",V.Local.sSummary,v.DataView.DtExport!DVSTemp.RowCount,v.Ambient.NewLine,V.Local.sSummary)
+		'savedb
+		f.Intrinsic.Control.CallSub(UpdateEmployees,"Tcmpy",V.Global.sCMPY2)
+	f.Intrinsic.Control.endif
+	
+	f.Data.DataView.Close("DtExport","DVSTemp")
+	
+	
+	f.Intrinsic.Control.If(V.Local.sSummary.Trim,<>,"")
+		'save upload summary
+
+'		V.Local.sdate.Set(V.Ambient.Now.FormatMMDDYYYYHHNNSS)
+'		f.Intrinsic.String.Build("UploadLog5502_{0}.TXT",V.Local.sdate,V.Local.sFileName)
+		f.Intrinsic.String.Build("{0}.TXT",v.Args.Filename,V.Local.sFileName)
+		f.Intrinsic.String.Build("{0}{1}",V.Global.sLocalPath,V.Local.sFileName,v.Local.sFile)
+		
+		f.Intrinsic.String.Build("Employee Upload Summary{0}================{0}{1}",v.Ambient.NewLine,V.Local.sSummary,V.Local.sSummary)
+		Function.Intrinsic.File.String2File(V.Local.sfile,V.Local.sSummary)
+	f.Intrinsic.Control.endif
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+'	F.Intrinsic.UI.Msgbox(V.Local.sError)
+'	F.Intrinsic.Control.End
+	F.Intrinsic.String.Build("File Name : {0} {1}{2}",v.Args.Filename,V.Ambient.Newline,V.Local.sError,V.Local.sError)
+	f.Intrinsic.Control.CallSub(Error_Log,"ERRMSG",V.Local.sError)
+F.Intrinsic.Control.EndTry	
+Program.Sub.Build_ExportData.End
+
+Program.Sub.Connect_FTP.Start
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	v.Local.sFTPInfo.Declare
+	v.Local.bExist.Declare
+	V.Local.sfolder.Declare
+	V.Local.sFilePath.Declare
+	v.Local.sFileList.Declare
+	V.Local.sCustomDir.Declare
+	v.Local.iFileCounter.Declare
+	V.Local.sRemoteFilePath.Declare
+	V.Local.sTempFilePath.Declare
+	V.Local.sCurrdir.Declare
+	
+
+'## Sample config file  ###
+'UserName
+'Password
+'RemoteHost
+'RemotePort
+'OutboundFile - Example : /Home/000_0qg77_bfincham/outbound
+
+'Function.Intrinsic.File.PathExists(path, boolean return)
+'F.Intrinsic.Control.If(V.Local.bExist,=,False)
+'	f.Intrinsic.Control.ExitSub
+'f.Intrinsic.Control.EndIf
+
+F.ODBC.Connection!con.OpenCompanyConnection(300)
+
+'SFTP site testing
+'F.Intrinsic.String.Build("{0}\{1}",V.System.Temp,"Output",V.Global.sLocalPath)
+f.Intrinsic.String.Build("{0}\Custom",v.Caller.GlobalDir,V.Local.sfolder)
+F.Intrinsic.File.DirExists(V.local.sfolder,V.Local.bExist)
+F.Intrinsic.Control.If(V.Local.bExist,=,False)
+	F.Intrinsic.File.CreateDir(V.Local.sfolder)
+F.Intrinsic.Control.EndIf
+
+f.Intrinsic.String.Build("{0}\Custom\5502",v.Caller.GlobalDir,V.Local.sCustomDir)
+f.Intrinsic.String.Build("{0}\Custom\5502",v.Caller.GlobalDir,V.Local.sfolder)
+F.Intrinsic.File.DirExists(V.Local.sfolder,V.Local.bExist)
+F.Intrinsic.Control.If(V.Local.bExist,=,False)
+	F.Intrinsic.File.CreateDir(V.Local.sfolder)
+F.Intrinsic.Control.EndIf
+
+f.Intrinsic.String.Build("{0}\Custom\5502\Config",v.Caller.GlobalDir,V.Local.sfolder)
+F.Intrinsic.File.DirExists(V.Local.sfolder,V.Local.bExist)
+F.Intrinsic.Control.If(V.Local.bExist,=,False)
+	F.Intrinsic.File.CreateDir(V.Local.sfolder)
+F.Intrinsic.Control.EndIf
+
+f.Intrinsic.String.Build("{0}\Custom\5502\Processed",v.Caller.GlobalDir,V.Local.sfolder)
+F.Intrinsic.File.DirExists(V.Local.sfolder,V.Local.bExist)
+F.Intrinsic.Control.If(V.Local.bExist,=,False)
+	F.Intrinsic.File.CreateDir(V.Local.sfolder)
+F.Intrinsic.Control.EndIf
+
+f.Intrinsic.String.Build("{0}\Custom\5502\",v.Caller.GlobalDir,V.Local.sfolder)
+f.Intrinsic.String.Build("{0}Config\{1}",V.Local.sfolder,"GCG_5502_FTPConfig.dat",V.Local.sFilePath)
+
+f.Intrinsic.File.Exists(v.Local.sFilePath,v.Local.bExist)
+f.Intrinsic.Control.If(v.Local.bExist)
+	'The file exists so we need to get the info
+	f.Intrinsic.File.File2String(v.Local.sFilePath,v.Local.sFTPInfo)
+	'split the info on new line
+	f.Intrinsic.String.Split(v.Local.sFTPInfo,v.Ambient.NewLine,v.Local.sFTPInfo)
+	f.Intrinsic.Control.If(v.Local.sFTPInfo.UBound,>=,4)
+		'we have enough lines so add them to the fields
+		F.Communication.SFTP.SetProperty("SSHAcceptServerAuthentication","true")
+		F.Communication.SFTP.SetProperty("User",v.Local.sFTPInfo(0).Trim)
+		F.Communication.SFTP.SetProperty("Password",v.Local.sFTPInfo(1).Trim)
+		F.Communication.SFTP.SetProperty("remoteHost",v.Local.sFTPInfo(2).Trim)
+		F.Communication.SFTP.SetProperty("remotePort",v.Local.sFTPInfo(3).Trim)
+		F.Communication.SFTP.Logon
+		
+	f.Intrinsic.Control.Else
+		'We don't have enough lines so error
+'		f.Intrinsic.UI.Msgbox("SFTP Config file does not have all of the information. User, Password, Host, and Port on their own line.","Warning")
+		V.Local.sFilePath.Set("SFTP Config file does not have all of the information. User, Password, Host, and Port on their own line.")
+		f.Intrinsic.Control.CallSub(Error_Log,"ERRMSG",V.Local.sFilePath)
+		f.Intrinsic.Control.End
+	f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.Else
+	'The file doesn't exist so let them know
+	f.Intrinsic.String.Build("SFTP Config file {0} not found",V.Local.sFilePath,V.Local.sFilePath)
+'	f.Intrinsic.UI.Msgbox(V.Local.sFilePath,"Warning")
+	f.Intrinsic.Control.CallSub(Error_Log,"ERRMSG",V.Local.sFilePath)
+	f.Intrinsic.Control.End
+f.Intrinsic.Control.EndIf
+
+'To check to see if you are actually connected after attempting to logon:
+F.Communication.SFTP.ReadProperty("connected",V.Local.bExist)
+F.Intrinsic.Control.If(V.Local.bExist,=,True)
+
+	V.Local.sCurrdir.Set(V.Ambient.Now.FormatMMDDYYYYHHNNSS)
+	f.Intrinsic.String.Build("{0}\Processed\{1}\",V.Local.sCustomDir,V.Local.sCurrdir,V.Global.sLocalPath)
+
+	'We are connected so we need to get List Directory
+	'We need to add the event handler because when we try to get the list directory it will return each file individually within the event sub.
+	F.Intrinsic.Control.AddEventHandler("SFTPDirList","Listdir")
+'	F.Communication.SFTP.SetProperty("RemotePath","/Home/000_0qg77_bfincham/outbound")
+	F.Communication.SFTP.SetProperty("RemotePath",v.Local.sFTPInfo(4).Trim)
+	'Calling list directory to get file list from SFTP
+	F.Communication.SFTP.ListDirectory
+
+F.Intrinsic.Control.Else
+	'We did not connect to the FTP server 
+	f.Intrinsic.String.Build("SFTP Connection Failed. Make sure that User, Password, Host, and Port are all correct and on their own line in {0}",V.Local.sFilePath,V.Local.sFilePath)
+'	f.Intrinsic.UI.Msgbox(V.Local.sFilePath,"Warning")
+	f.Intrinsic.Control.CallSub(Error_Log,"ERRMSG",V.Local.sFilePath)
+	f.Intrinsic.Control.End
+F.Intrinsic.Control.EndIf
+
+
+'Sleeping to make sure all of the Events are done firing.
+F.Intrinsic.UI.Sleep(10)
+'Getting all of the files we just downloaded into our temp directory
+
+
+F.Intrinsic.File.GetFileList(V.Global.sLocalPath,V.Local.sFileList)
+'Splitting to make our loop
+F.Intrinsic.String.Split(V.Local.sFileList,":",V.Local.sFileList)
+f.Intrinsic.Control.For(v.Local.iFileCounter,0,v.Local.sFileList.UBound,1)
+
+	f.Intrinsic.Control.If(V.Local.sFileList(V.Local.iFileCounter).trim,<>,"")
+		f.Intrinsic.Control.CallSub(Export_Employee,"Filename",V.Local.sFileList(V.Local.iFileCounter))
+	f.Intrinsic.Control.endif
+
+'	'Move the file to Processed Folder because it has finished uploading
+'	V.Local.sRemoteFilePath.Set("/Processed")
+'	F.Intrinsic.String.Build("{0}/{1}{2}.bkp",V.Local.sRemoteFilePath,V.Local.sFileList(V.Local.iFileCounter),V.Ambient.Now.FormatMMDDYYYYHHNNSS,V.Local.sRemoteFilePath)		
+'	F.Communication.SFTP.SetProperty("LocalFile",V.Local.sTempFilePath)
+'	F.Communication.SFTP.SetProperty("RemoteFile",V.Local.sRemoteFilePath)
+'	F.Communication.SFTP.SetProperty("TransferMode",2)
+'	F.Communication.SFTP.SetProperty("Overwrite", true)
+'	F.Communication.SFTP.Upload		
+	
+f.Intrinsic.Control.Next(v.Local.iFileCounter)
+
+F.ODBC.Connection!con.Close	
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+'	F.Intrinsic.UI.Msgbox(V.Local.sError)
+'	F.Intrinsic.Control.End
+	f.Intrinsic.Control.CallSub(Error_Log,"ERRMSG",V.Local.sError)
+F.Intrinsic.Control.EndTry	
+Program.Sub.Connect_FTP.End
+
+Program.Sub.UpdateEmployees.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+V.Local.sTargetCmpy.Declare
+
+
+Function.Data.DataView.ToDataTable("DtExport","DVSTemp", "SaveDB")
+
+f.Intrinsic.String.Build("GLOBAL{0}.EMPLOYEE_MSTR",v.Args.Tcmpy,V.Local.sTargetCmpy)
+F.Data.DataTable.SaveToDB("SaveDB", "con",V.Local.sTargetCmpy,"EmployeeNumber",256,"EmployeeNumber@!@EMPLOYEE*!*Hire_Date@!@DATE_HIRE*!*Termination_Date_1@!@DATE_TERMINATION*!*Dept@!@DEPT_EMPLOYEE*!*Pay_Type_1@!@PAY_TYPE*!*Pay_Frequency_1@!@FREQUENCY*!*Rate_1@!@RATE*!*Shift@!@SHIFT*!*Works-in_State_1@!@STATE_CODE*!*SUI_State_1@!@SUI*!*Initials@!@EMPL_INITIALS*!*BalancingGroup@!@PR_BALANCE_GROUP*!*pay_groupcode@!@PAY_GROUP")
+
+F.Data.DataTable.Close("SaveDB")
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+'	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.CallSub(Error_Log,"ERRMSG",V.Local.sError)
+'	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry	
+Program.Sub.UpdateEmployees.End
+
+Program.Sub.ListDir.Start
+f.Intrinsic.Control.Try
+V.Local.sError.Declare
+V.Local.sLocalFile.Declare
+v.Local.bExist.Declare
+
+
+
+'make sure we are not doing anything for . or .. from the returned file names
+F.Intrinsic.Control.If(V.Args.FileName,=,".","OR",V.Args.FileName,=,"..")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+'' download/process only csv file
+Function.Intrinsic.String.IsInString(V.Args.FileName,".csv",True,v.local.bExist)
+F.Intrinsic.Control.If(V.Local.bExist,=,False)
+	f.Intrinsic.Control.ExitSub
+f.Intrinsic.Control.EndIf 
+
+F.Intrinsic.File.DirExists(V.Global.sLocalPath,V.Local.bExist)
+F.Intrinsic.Control.If(V.Local.bExist,=,False)
+	f.Intrinsic.File.CreateDir(V.Global.sLocalPath)
+f.Intrinsic.Control.EndIf
+
+'we are setting the local directory that we are moving the files to so that we can read them.
+'downloads the files from the server.
+F.Intrinsic.String.Build("{0}\{1}",V.Global.sLocalPath,V.Args.FileName, V.Local.sLocalFile)
+F.Communication.SFTP.SetProperty("LocalFile",V.Local.sLocalFile)
+F.Communication.SFTP.SetProperty("RemoteFile",V.Args.FileName)
+'F.Communication.SFTP.SetProperty("TransferMode",2)
+F.Communication.SFTP.SetProperty("Overwrite", true)
+F.Communication.SFTP.Download
+F.Communication.SFTP.DeleteFile(V.Args.FileName)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+'	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.CallSub(Error_Log,"ERRMSG",V.Local.sError)
+'	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry	
+Program.Sub.ListDir.End
+
+Program.Sub.frmImport_UnLoad.Start
+f.Intrinsic.Control.Try
+V.Local.sError.Declare
+f.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+'	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry	
+Program.Sub.frmImport_UnLoad.End
+
+Program.Sub.cmdOK_Click.Start
+f.Intrinsic.Control.Try
+V.Local.sError.Declare
+V.Local.scmpycode.Declare
+V.Local.sFilter.Declare
+V.Local.sTargetCmpy.Declare
+
+	
+	f.Intrinsic.Control.If(v.Screen.frmImport!chkWBR.Value,<>,1)
+	f.Intrinsic.Control.andIf(v.Screen.frmImport!chkFAB.Value,<>,1)
+		f.Intrinsic.UI.Msgbox("Please select Company code")
+		f.Intrinsic.Control.ExitSub
+	f.Intrinsic.Control.EndIf
+	
+	f.Intrinsic.Control.BlockEvents
+	
+	f.Intrinsic.Control.If(v.Screen.frmImport!chkWBR.Value,=,1)
+	'only works for callwrappers
+		F.ODBC.Connection!con.OpenConnection("GLOBAL_WBR",V.Ambient.PUser,V.Ambient.PPass)
+'			f.Intrinsic.String.Build("GLOBAL_{0}",V.Global.sCMPY1,V.Local.sTargetCmpy)
+'			F.ODBC.Connection!con.OpenConnection(V.Local.sTargetCmpy,V.Ambient.PUser,V.Ambient.PPass)
+		f.Intrinsic.Control.CallSub(Import_TimeAttendGSS)
+		F.ODBC.Connection!con.Close
+	f.Intrinsic.Control.EndIf
+
+	f.Intrinsic.Control.If(v.Screen.frmImport!chkFAB.Value,=,1)
+		F.ODBC.Connection!con.OpenConnection("GLOBAL_FAB",V.Ambient.PUser,V.Ambient.PPass)
+'			f.Intrinsic.String.Build("GLOBAL_{0}",V.Global.sCMPY2,V.Local.sTargetCmpy)
+'			F.ODBC.Connection!con.OpenConnection(V.Local.sTargetCmpy,V.Ambient.PUser,V.Ambient.PPass)
+		f.Intrinsic.Control.CallSub(Import_TimeAttendGSS)
+		F.ODBC.Connection!con.Close
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.unBlockEvents
+	
+	f.Intrinsic.Control.If(v.DataTable.DTImport.RowCount,>,0)
+		v.Local.sFilter.Set("Hours_HH is not Null")
+'		f.Data.DataView.Create("DTImport","DTVIEW",22,V.Local.sFilter,"")
+		f.Data.DataView.Create("DTImport","DTVIEW")
+		f.Data.DataView.SetFilter("DTImport","DTVIEW",v.Local.sFilter)
+		
+		f.Data.DataTable.Create("DtDummy")
+		f.Data.DataTable.AddColumn("DtDummy","employee","string"," ")
+		
+		F.Data.linq.Join("Leftjoin","DataView", "DTImport","DTVIEW*!*A", "DataTable", "DtDummy*!*B", "A.employee=B.employee", "A.employee*!*A.charge_date*!*Sum(A.hours_HH) as HH*!*Sum(A.Hours_MM) as MM","","A.employee,A.charge_date","","dtResult1", True)
+	
+	
+		f.Data.DataTable.AddExpressionColumn("dtResult1","HoursDec1","long","([MM]/60)")
+		f.Data.DataTable.AddExpressionColumn("dtResult1","HoursDec2","float","([MM]/60)")
+		f.Data.DataTable.AddExpressionColumn("dtResult1","HoursDec3","float","[HoursDec2] - [HoursDec1]")
+		
+		f.Data.DataTable.AddExpressionColumn("dtResult1","HoursDec4","long","[HH] + [HoursDec1]")
+		
+		f.Data.DataTable.AddExpressionColumn("dtResult1","DTFLDMM","long","[HoursDec3]*60")
+		
+		f.Data.DataTable.AddExpressionColumn("dtResult1","DTFLD1","string","[HH] + [HoursDec2]")
+		
+'		Function.Intrinsic.Debug.InvokeDebugger
+'		Function.Intrinsic.Debug.Stop
+		
+		f.Data.DataTable.AddExpressionColumn("dtResult1","DTHours","long","HoursDec2")
+		f.Data.DataTable.AddExpressionColumn("dtResult1","DTHours1","float","HoursDec2 - DTHours")
+		
+		f.Data.DataTable.AddExpressionColumn("dtResult1","DTTIMM","long","Convert([MM],'System.Int32')")
+		
+'		f.Data.DataTable.AddExpressionColumn("dtResult1","DTHours2","long","([DTTIMM]%60)")
+'		f.Data.DataTable.AddExpressionColumn("dtResult1","DTHours3","float","([DTTIMM]/60)")
+		
+	'	f.Data.DataTable.AddExpressionColumn("dtResult1","DTFLDMM","float","IIF([HoursDec2]>1,HoursDec3,0)")
+		
+	'	IN mins
+'		f.Data.DataTable.AddExpressionColumn("dtResult1","DTFLD","string","[HoursDec4] + '.' + [DTFLDMM]")
+		
+'		'In Hrs
+'		f.Data.DataTable.AddExpressionColumn("dtResult1","DTFLD101","string","Convert(HoursDec2,'System.String')")
+'		f.Data.DataTable.AddExpressionColumn("dtResult1","DTFLD102","string","substring([DTFLD101],2,3)")
+		
+'		f.Data.DataTable.AddExpressionColumn("dtResult1","DTFLD1","string","[HH] +  substring([DTFLD101],1,4)")
+'		f.Data.DataTable.AddExpressionColumn("dtResult1","DTFLD1","string","[HoursDec4] +  substring([DTFLD101],2,3)")
+'		f.Data.DataTable.AddExpressionColumn("dtResult1","DTFLD1","string","[HH] +  Convert(DTFLD102,'System.String')")
+
+
+		f.Data.DataTable.AddExpressionColumn("DTIMPORT","DTTIMT","string","Convert(time_IN,'System.String')")
+		f.Data.DataTable.AddExpressionColumn("DTIMPORT","DTTIMT2","string","substring([DTTIMT],1,5)")
+
+		f.Data.DataTable.AddColumn("dtResult1","DTFLD3","float")
+		f.Data.DataTable.SetValueFormat("dtResult1",-1,"DTFLD1","DTFLD3",".00")
+
+		f.Data.DataTable.AddExpressionColumn("dtResult1","DTTIM1","long","[DTFLD3]*100")
+		f.Data.DataTable.AddExpressionColumn("dtResult1","DTTIM2","long","([DTTIM1]%100)")
+		f.Data.DataTable.AddExpressionColumn("dtResult1","DTTIM3","float","([DTTIM2]/100)")
+		f.Data.DataTable.AddExpressionColumn("dtResult1","DTTIM4","long","([DTFLD3]-DTTIM3)")
+		f.Data.DataTable.AddExpressionColumn("dtResult1","DTHours2","Float","([DTTIMM]%60)/100")
+		
+'		f.Data.DataTable.AddExpressionColumn("dtResult1","DTHour","string","Convert(DTTIM4,'System.String')")
+'		f.Data.DataTable.AddExpressionColumn("dtResult1","DTMinute","string","Convert(DTHours2,'System.String')")
+		
+'		f.Data.DataTable.AddExpressionColumn("dtResult1","DTHourMIN","string","DTHour+ '.' + DTMinute")
+'		f.Data.DataTable.AddExpressionColumn("dtResult1","DTHourMIN","string","DTHour + DTMinute")
+
+		f.Data.DataTable.AddExpressionColumn("dtResult1","DTHourMIN","string","DTTIM4 + DTHours2")
+		
+		f.Data.DataTable.AddColumn("dtResult1","DTFLD2","string")
+		f.Data.DataTable.SetValueFormat("dtResult1",-1,"DTHourMIN","DTFLD2","#.##")
+		
+		
+		f.Data.DataTable.AddExpressionColumn("dtResult1","dummyclmn","string","")
+		f.Data.DataTable.AddExpressionColumn("dtResult1","dummyclmn1","string","")
+		
+		'reset filter
+		f.Data.DataView.SetFilter("DTImport","DTVIEW","")
+		f.Intrinsic.Control.CallSub(ExportFile)
+		
+		f.Data.DataTable.Close("DtDummy")
+	f.Intrinsic.Control.EndIf
+	
+	f.Intrinsic.Control.CallSub(frmImport_UnLoad)
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry	
+Program.Sub.cmdOK_Click.End
+
+
+Program.Sub.ExportFile.Start
+f.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sRet.Declare
+v.Local.sRettemp.Declare
+v.Local.sClmn.Declare
+V.Local.sFile.Declare
+V.Local.sDtype.Declare
+
+'Time & Attendance
+
+	f.Intrinsic.Control.CallSub(Assign_Clockstat)
+	
+	f.Data.DataTable.SetValueFormat("DTIMPORT",-1,"Date_IN","Date_IN","MM/DD/YYYY")
+	f.Data.DataTable.SetValueFormat("DTIMPORT",-1,"charge_date","charge_date","MM/DD/YYYY")
+
+'	Function.Data.DataView.SetSort("DTIMPORT","DTVIEW","employee,Date_IN asc,time_IN asc")
+
+	Function.Data.DataView.ToString("DTIMPORT","DTVIEW","employee*!*dummyclmn*!*Date_IN*!*DTTIMT2*!*Clock_Stat*!*dummyclmn*!*charge_date",",",v.Ambient.NewLine,v.Local.sRettemp)
+
+'======REG not required
+''	f.Data.DataTable.SetValueFormat("dtResult1",-1,"Date_IN","Date_IN","MM/DD/YYYY")
+'	f.Data.DataTable.SetValueFormat("dtResult1",-1,"charge_date","charge_date","MM/DD/YYYY")
+'	
+'	f.Data.DataView.Create("dtResult1","DTVIEW",22,"","employee,charge_date")
+'	f.Data.DataTable.SetValue("dtResult1",-1,"dummyclmn1","REG")
+'	Function.Data.DataView.ToString("dtResult1","DTVIEW","employee*!*dummyclmn*!*charge_date*!*dummyclmn*!*dummyclmn*!*dummyclmn1*!*dummyclmn*!*dummyclmn*!*dummyclmn*!*DTFLD2",",",v.Ambient.NewLine,v.Local.sRet)
+'	
+	v.Local.sClmn.Set("Employee ID*!*Department Code*!*Date*!*Punch Time*!*Punch Type*!*Earning Code*!*Tax Profile Code*!*Comments*!*Labor Allocation Code*!*Hours*!*dummyclmn")
+	V.Local.sDtype.set("String*!*String*!*String*!*String*!*String*!*String*!*String*!*String*!*String*!*String*!*String")
+
+'	f.Intrinsic.String.Build("{0}{1}{2}",v.Local.sRettemp,v.Ambient.NewLine,v.Local.sRet,v.Local.sRet)
+'	
+'REG not required
+	V.Local.sRet.Set(v.Local.sRettemp)
+	F.Data.DataTable.CreateFromString("DTExport",V.Local.sRet,V.Local.sClmn,V.Local.sDtype,",",v.ambient.newline)
+'	f.Data.DataView.Create("DTExport","DVExport",22,"","Employee ID,Date asc,Hours,Punch Time")
+'	f.Data.DataView.Create("DTExport","DVExport",22,"","Employee ID,Tax Profile Code,Date asc,Hours asc")
+	
+	f.Data.DataTable.AddExpressionColumn("DTExport","DTSort","string","IIF([Earning Code]='REG',[Date],[Tax Profile Code])")
+	
+'	f.Data.DataView.Create("DTExport","DVExport",22,"","Employee ID,DTSort,Date asc,Hours asc")
+'	f.Data.DataView.Create("DTExport","DVExport",22,"","Employee ID,DTSort,Date asc,Punch Time")
+'	f.Data.DataView.Create("DTExport","DVExport",22,"","Employee ID,DTSort,Date asc,Hours asc,Punch Time")
+	f.Data.DataView.Create("DTExport","DVExport",22,"","Employee ID,DTSort,Hours asc,Date asc,Punch Time")
+	
+	'Employee is 4char for this customer
+	f.Data.DataTable.SetValueFormat("DTExport",-1,"Employee ID","Employee ID","0000")
+	
+	v.Local.sClmn.Set("Employee ID*!*Department Code*!*Date*!*Punch Time*!*Punch Type*!*Earning Code*!*dummyclmn*!*Comments*!*Labor Allocation Code*!*Hours")
+	Function.Data.DataView.ToString("DTExport","DVExport",v.Local.sClmn,",",v.Ambient.NewLine,v.Local.sRet)
+
+	F.Intrinsic.UI.ShowSaveFileDialog("","csv|*.csv",V.Local.sFile)
+	F.Intrinsic.Control.If(V.Local.sFile,<>,"***CANCEL***")
+		F.Intrinsic.File.String2File(V.Local.sFile,v.Local.sRet)
+	F.Intrinsic.Control.EndIf
+	
+	f.Data.DataView.Close("DtExport","DVExport")
+	f.Data.DataTable.Close("DtExport")
+	
+	
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry	
+Program.Sub.ExportFile.End
+
+Program.Sub.Error_Log.Start
+f.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.iUsrID.Declare
+v.Local.sRecipient.Declare
+v.Local.sSender.Declare
+v.Local.sTemp.Declare
+v.Local.sTemp1.Declare
+
+
+'SFTP Error
+
+'we need to send an email with the error information and file
+	'use v.Args.Error for the error message and we need to also use v.Local.sErrorTempFilePath for the file location
+	'Getting all the stuff we need for sending an email
+	f.Global.Security.GetUserId(v.Caller.User,v.Caller.CompanyCode,v.Local.iUsrId)
+	f.Global.Security.GetFullName(v.Caller.User,v.Local.sTemp)
+	f.Global.Security.GetUserEmail(v.Caller.User,v.Local.sTemp1)
+	f.Intrinsic.String.Build("{0}*!*{1}",v.Local.sTemp1,v.Local.sTemp,v.Local.sSender)
+	v.Local.sTemp.Set("")
+	v.Local.sTemp1.Set("")
+	f.Global.Security.GetGroupEmails("PAYCOM",v.Local.sTemp)
+	'split the emails
+	f.Intrinsic.String.Split(v.Local.sTemp,"*!*",v.Local.sTemp)
+	'put the emails back together
+	f.Intrinsic.String.Join(v.Local.sTemp,"@!@*!*",v.Local.sTemp)
+	'put *!* in the front of the string
+	f.Intrinsic.String.Build("*!*{0}",v.Local.sTemp,v.Local.sRecipient)
+	v.Local.sTemp.Redim(0,0)
+	v.Local.sTemp.Set(v.Args.ERRMSG)
+	f.Global.Messaging.QueueMessage(v.Caller.CompanyCode,v.Local.iUsrID,"GCG_5502","PaycomImport Error",v.Local.sSender,v.Local.sRecipient,v.Local.sTemp)
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+'	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.Error_Log.End
+
+Program.Sub.Assign_Clockstat.Start
+f.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.ifor.Declare
+v.Local.sRet.Declare
+
+
+'set Counter to assign CLOCKIN & OUT
+f.Data.DataTable.AddColumn("DTIMPORT","EmpCounter","long")
+Function.Data.DataView.ToDataTableDistinct("DTIMPORT","DTVIEW","DTAssignEmp","Employee*!*charge_date")
+F.Intrinsic.Control.For(v.Local.ifor,0,v.DataTable.DTAssignEmp.RowCount--,1)
+	f.Intrinsic.String.Build("Employee='{0}' and charge_date = '{1}'",V.DataTable.DTAssignEmp(v.Local.ifor).Employee!FieldValTrim,V.DataTable.DTAssignEmp(v.Local.ifor).charge_date!FieldVal,v.Local.sRet)
+	F.Intrinsic.Control.If(V.DataView.DTIMPORT!DTVIEW1.Exists,=,True)
+		f.Data.DataView.Close("DTIMPORT","DTVIEW1")
+	f.Intrinsic.Control.EndIf
+	
+	f.Data.DataView.Create("DTIMPORT","DTVIEW1",22,v.Local.sRet,"employee,date_In asc,time_IN asc")
+	Function.Data.DataView.SetSeries("DTIMPORT","DTVIEW1","EmpCounter",1,1)
+f.Intrinsic.Control.Next(v.Local.ifor)
+
+f.Data.DataView.Close("DTIMPORT","DTVIEW1")
+
+f.Data.DataTable.AddExpressionColumn("DTIMPORT","Clock_Stat","string","IIF(EmpCounter=1,'ID',IIF(EmpCounter=2,'OL',IIF(EmpCounter=3,'IL',IIF(EmpCounter=4,'OD',''))))")
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.Assign_Clockstat.End
+
+Program.Sub.Comments.Start
+${$5$}$2.0.0.0$}$2
+${$6$}$rnair$}$20210218093146391$}$JUGEdtlNdgRUPvge2DQ26bz/1piQWHOn/z9H6gVho+I59sTQuSb3+Yx2z48/A60Oh85DIHRMH64=
+Program.Sub.Comments.End
